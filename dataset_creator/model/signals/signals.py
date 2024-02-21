@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 from scipy.io import wavfile
+from scipy.interpolate import interp1d
 
 from dataset_creator.model.signals.interval import Interval, stack_intervals
 from dataset_creator.model.signals.noise import BaseNoise
@@ -101,16 +102,25 @@ class Signal:
         wavfile.write(path, rate, self.values)
 
     @staticmethod
-    def load_from_csv(path: Path) -> "Signal":
+    def load_from_csv(path: Path, dt: Optional[float] = None) -> "Signal":
         # FIXME: dtypes
         data = np.genfromtxt(path, dtype=np.float64, delimiter=",")
         data = data[np.any(~np.isnan(data), axis=1)]
-        dt = (data[-1, 0] - data[0, 0]) / (data.shape[0] - 1)
-        return Signal(data[1:, 1], dt=dt, t0=data[0, 0], name=path.stem)
+        t, a = data.T
+        if dt is None:
+            dt = (t[-1] - t[0]) / (t.size - 1)
+        else:
+            a_fun = interp1d(t, a, kind='linear', fill_value="extrapolate")
+            n = round((t[-1] - t[0]) / dt) + 1
+            t = np.linspace(t[0], t[0] + (n - 1) * dt, n)
+            a = a_fun(t)
+
+        return Signal(a, dt=dt, t0=t[0], name=path.stem)
 
     def save_as_csv(self, path: Path) -> None:
         data = np.vstack((self.t, self.values)).T
-        np.savetxt(path, data, delimiter=",")
+        n_decimals = max(4, int(abs(np.log10(self.dt))))
+        np.savetxt(path, data, fmt=f"%.{n_decimals}f", delimiter=",")
 
     def cut(self, t0: float, t1: float) -> "Signal":
         i0 = round((t0 - self.t0) / self.dt)
