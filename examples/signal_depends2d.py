@@ -11,8 +11,8 @@ if __name__ == "__main__":
     u = Signal.load_from_csv(Path(r"C:\Users\Олег\Desktop\NonE\задачи от АА\data\orcad\raw\log2.csv"))
     x1 = Signal.load_from_csv(Path(r"C:\Users\Олег\Desktop\NonE\задачи от АА\data\orcad\scheme1\log2_scheme1_x1.csv"), dt=u.dt)
 
-    points = np.vstack((x1.values, u.values)).T
-    shift = -np.mean(u.values, axis=0)
+    points = np.vstack((u.values, x1.values)).T
+    shift = -np.mean(x1.values, axis=0)
     _points = points.copy()
     _points[:, 1] += shift
 
@@ -27,8 +27,8 @@ if __name__ == "__main__":
 
     plt.scatter(points[:, 0], points[:, 1], c=colors, s=3)
     plt.title("Схема1 log2")
-    plt.xlabel("x1")
-    plt.ylabel("u")
+    plt.xlabel("u (вход)")
+    plt.ylabel("x1 (выход)")
 
     plt.show()
 

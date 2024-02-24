@@ -77,7 +77,7 @@ class Signal:
         dt: float,
         noise: Optional[BaseNoise] = None,
         t0: float = 0.0,
-    ) -> npt.NDArray[np.float32]:
+    ) -> "Signal":
         phase = stack_intervals(frequencies, dt)
         A = stack_intervals(amplitudes, dt)
 
@@ -122,9 +122,9 @@ class Signal:
         n_decimals = max(4, int(abs(np.log10(self.dt))))
         np.savetxt(path, data, fmt=f"%.{n_decimals}f", delimiter=",")
 
-    def cut(self, t0: float, t1: float) -> "Signal":
-        i0 = round((t0 - self.t0) / self.dt)
-        i1 = round((t1 - self.t0) / self.dt)
+    def cut(self, t0: Optional[float] = None, t1: Optional[float] = None) -> "Signal":
+        i0 = round((t0 - self.t0) / self.dt) if t0 is not None else 0
+        i1 = round((t1 - self.t0) / self.dt) if t1 is not None else self.values.size - 1
         return Signal(
             values=self.values[i0:i1 + 1].copy(),
             dt=self.dt,
